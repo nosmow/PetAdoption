@@ -1,8 +1,17 @@
 using Mapster;
+using Microsoft.EntityFrameworkCore;
+using PetAdoption.Data;
 using PetAdoption.Repositories;
 using PetAdoption.Repositories.IRepositories;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//Connection String
+var dbConnectionString = builder.Configuration.GetConnectionString("SqlConnection");
+
+//Database
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(dbConnectionString));
 
 // Add services to the container.
 builder.Services.AddScoped<IPetRepository, PetRepository>();

@@ -5,16 +5,37 @@ using PetAdoption.Repositories.IRepositories;
 
 namespace PetAdoption.Repositories;
 
-public class PetRepository(AppDbContext context) : IPetRepository
+public class PetRepository(ApplicationDbContext context) : IPetRepository
 {
-    public async Task<ICollection<Pet>> GetAllAsync()
+    public async Task<ICollection<Pet>> GetPetsAsync()
     {
-        return await context.Pets.OrderBy(p => p.Age).ToListAsync();
+        return await context.Pets
+            .OrderBy(p => p.Age)
+            .ToListAsync();
     }
 
-    public async Task<Pet?> GetByIdAsync(int id)
+    public async Task<Pet?> GetPetByIdAsync(int id)
     {
-        return await context.Pets.FirstOrDefaultAsync(p => p.Id == id);
+        return await context.Pets
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
+
+    public async Task<ICollection<Pet>> GetPetByNameAsync(string name)
+    {
+        string nameTrim = name.ToLower().Trim();
+        return await context.Pets
+            .Where(p => p.Name.ToLower().Contains(nameTrim))
+            .OrderBy(p => p.Age)
+            .ToListAsync();
+    }
+
+    public async Task<ICollection<Pet>> GetPetByBreedAsync(string breed)
+    {
+        string breedTrim = breed.ToLower().Trim();
+        return await context.Pets
+            .Where(p => p.Breed.ToLower().Contains(breedTrim))
+            .OrderBy(p => p.Age)
+            .ToListAsync();
     }
 
     public async Task<bool> ExistingPetAsync(string name, int age, string species, string breed)
@@ -30,7 +51,12 @@ public class PetRepository(AppDbContext context) : IPetRepository
             p.Breed.ToLower().Trim() == breedTrim);
     }
 
-    public async Task<bool> CreateAsync(Pet pet)
+    public async Task<bool> ExistingPetAsync(int id)
+    {
+        return await context.Pets.AnyAsync(p => p.Id == id);
+    }
+
+    public async Task<bool> CreatePetAsync(Pet pet)
     {
         pet.CreatedAt = DateTime.UtcNow;
         pet.UpdatedAt = DateTime.UtcNow;
@@ -39,7 +65,7 @@ public class PetRepository(AppDbContext context) : IPetRepository
         return await SaveAsync();
     }
 
-    public async Task<bool> UpdateAsync(Pet pet)
+    public async Task<bool> UpdatePetAsync(Pet pet)
     {
         pet.UpdatedAt = DateTime.UtcNow;
         
@@ -47,7 +73,7 @@ public class PetRepository(AppDbContext context) : IPetRepository
         return await SaveAsync();
     }
 
-    public async Task<bool> DeleteAsync(Pet pet)
+    public async Task<bool> DeletePetAsync(Pet pet)
     {
         context.Pets.Remove(pet);
         return await SaveAsync();
