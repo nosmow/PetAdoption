@@ -27,7 +27,7 @@ public class PetsController(IPetRepository repository) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPet(int petId)
     {
-        Pet? pet = await repository.GetPetByIdAsync(petId);
+        Pet pet = await repository.GetPetByIdAsync(petId);
         
         if (pet == null)
             return NotFound();
@@ -77,18 +77,10 @@ public class PetsController(IPetRepository repository) : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> CreatePet([FromBody] CreatePetDto? dto)
+    public async Task<IActionResult> CreatePet([FromBody] CreatePetDto dto)
     {
         if (!ModelState.IsValid || dto == null)
             return BadRequest(ModelState);
-        
-        bool existingPet = await repository.ExistingPetAsync(dto.Name, dto.Age, dto.Species, dto.Breed);
-
-        if (existingPet)
-        {
-            ModelState.AddModelError("", "Pet already exists.");
-            return StatusCode(404, ModelState);
-        }
 
         Pet pet = dto.Adapt<Pet>();
         
@@ -106,7 +98,7 @@ public class PetsController(IPetRepository repository) : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> UpdatePet([FromBody] UpdatePetDto? dto)
+    public async Task<IActionResult> UpdatePet([FromBody] UpdatePetDto dto)
     {
         if (!ModelState.IsValid || dto == null)
             return BadRequest(ModelState);
@@ -143,7 +135,7 @@ public class PetsController(IPetRepository repository) : ControllerBase
         if (!existingPet)
             return NotFound();
 
-        Pet? pet = await repository.GetPetByIdAsync(petId);
+        Pet pet = await repository.GetPetByIdAsync(petId);
 
         if (pet == null)
         {

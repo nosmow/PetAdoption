@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PetAdoption.Data;
 using PetAdoption.Models;
+using PetAdoption.Models.Enums;
 using PetAdoption.Repositories.IRepositories;
 
 namespace PetAdoption.Repositories;
@@ -10,21 +11,23 @@ public class PetRepository(ApplicationDbContext context) : IPetRepository
     public async Task<ICollection<Pet>> GetPetsAsync()
     {
         return await context.Pets
+            .Where(p => !p.IsDeleted)
             .OrderBy(p => p.Age)
             .ToListAsync();
     }
 
-    public async Task<Pet?> GetPetByIdAsync(int id)
+    public async Task<Pet> GetPetByIdAsync(int id)
     {
         return await context.Pets
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
     }
 
     public async Task<ICollection<Pet>> GetPetByNameAsync(string name)
     {
         string nameTrim = name.ToLower().Trim();
+        
         return await context.Pets
-            .Where(p => p.Name.ToLower().Contains(nameTrim))
+            .Where(p => p.Name.ToLower().Contains(nameTrim) && !p.IsDeleted)
             .OrderBy(p => p.Age)
             .ToListAsync();
     }
@@ -32,23 +35,11 @@ public class PetRepository(ApplicationDbContext context) : IPetRepository
     public async Task<ICollection<Pet>> GetPetByBreedAsync(string breed)
     {
         string breedTrim = breed.ToLower().Trim();
+        
         return await context.Pets
-            .Where(p => p.Breed.ToLower().Contains(breedTrim))
+            .Where(p => p.Breed.ToLower().Contains(breedTrim) && !p.IsDeleted)
             .OrderBy(p => p.Age)
             .ToListAsync();
-    }
-
-    public async Task<bool> ExistingPetAsync(string name, int age, string species, string breed)
-    {
-        string nameTrim =  name.ToLower().Trim();
-        string speciesTrim = species.ToLower().Trim();
-        string breedTrim = breed.ToLower().Trim();
-        
-        return await context.Pets.AnyAsync(p => 
-            p.Name.ToLower().Trim() == nameTrim &&
-            p.Age == age &&
-            p.Species.ToLower().Trim( )==  speciesTrim &&
-            p.Breed.ToLower().Trim() == breedTrim);
     }
 
     public async Task<bool> ExistingPetAsync(int id)
@@ -75,7 +66,10 @@ public class PetRepository(ApplicationDbContext context) : IPetRepository
 
     public async Task<bool> DeletePetAsync(Pet pet)
     {
-        context.Pets.Remove(pet);
+        pet.UpdatedAt = DateTime.UtcNow;
+        pet.IsDeleted = true;
+        
+        context.Pets.Update(pet);
         return await SaveAsync();
     }
 
